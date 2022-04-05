@@ -12,8 +12,9 @@ jobs:
 
     steps:
       - name: Dispatch event
-        uses: peter-evans/repository-dispatch@v1
+        uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.FETCH_REPO_TOKEN }}
           event-type: pr-number
+          repository: pellizzetti/actions
           client-payload: '{"event": "${{ github.event_name }}", "number": "${{ github.event.number }}"}'
