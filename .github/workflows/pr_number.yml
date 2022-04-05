@@ -15,6 +15,6 @@ jobs:
         uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.FETCH_REPO_TOKEN }}
-          event-type: pr-number
+          event-type: pr-number-event
           repository: pellizzetti/actions
           client-payload: '{"event": "${{ github.event_name }}", "number": "${{ github.event.number }}"}'
