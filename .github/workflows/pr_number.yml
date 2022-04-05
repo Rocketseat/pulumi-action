@@ -1,0 +1,20 @@
+name: Parse and dispatch providers events
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  dispatch-provider-events:
+    name: Dispatch provider events
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Dispatch event
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.FETCH_REPO_TOKEN }}
+          event-type: pr-number-event
+          repository: pellizzetti/actions
+          client-payload: '{"event": "${{ github.event_name }}", "number": "${{ github.event.number }}"}'

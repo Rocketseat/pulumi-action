@@ -1,0 +1,47 @@
+name: Receive event
+on:
+  repository_dispatch:
+    types: [pr-number-event]
+
+jobs:
+  test:
+    name: Running from \#${{ github.event.client_payload.number }}
+    runs-on: ubuntu-latest
+
+    # if: ${{ github.event.client_payload.event == 'pull_request' }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v2
+        with:
+          go-version: "^1.13.1"
+      - name: Install pulumi
+        uses: pulumi/setup-pulumi@v2
+        with:
+          pulumi-version: 3.0.0 # explicitly leaving this in place so that we can test the action uses a newer version
+      - run: |
+          pulumi login --local
+          pulumi stack init dev
+        working-directory: .github/test-stacks/golang
+        env:
+          PULUMI_CONFIG_PASSPHRASE: not-a-secret
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 14.x
+          cache: yarn
+      - run: yarn install
+      - run: yarn build
+      - uses: ./
+        if: always()
+        id: pulumi
+        env:
+          PULUMI_CONFIG_PASSPHRASE: not-a-secret
+        with:
+          command: up
+          cloud-url: file://~
+          stack-name: dev
+          upsert: true
+          work-dir: .github/test-stacks/golang
+          comment-on-pr: true
+          pr-number: ${{ github.event.client_payload.number }}
+      - run: echo "The random string is `${{ steps.pulumi.outputs.name }}`"
