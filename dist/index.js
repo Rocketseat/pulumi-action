@@ -87037,6 +87037,7 @@ const options = lib.Partial({
     target: lib.Array(lib.String),
     targetDependents: lib.Boolean,
     editCommentOnPr: lib.Boolean,
+    prNumber: lib.Number,
     userAgent: lib.Literal('pulumi/actions@v3'),
 });
 const config = lib.Record({
@@ -87076,6 +87077,7 @@ function makeConfig() {
                 target: parseArray((0,core.getInput)('target')),
                 targetDependents: parseBoolean((0,core.getInput)('target-dependents')),
                 editCommentOnPr: parseBoolean((0,core.getInput)('edit-pr-comment')),
+                prNumber: parseNumber((0,core.getInput)('pr-number')),
                 userAgent: 'pulumi/actions@v3',
             },
         });
@@ -87105,7 +87107,7 @@ var dedent = __nccwpck_require__(5281);
 
 function handlePullRequestMessage(config, output) {
     return modules_awaiter(this, void 0, void 0, function* () {
-        const { githubToken, command, stackName, options: { editCommentOnPr }, } = config;
+        const { githubToken, command, stackName, options: { editCommentOnPr, prNumber }, } = config;
         const heading = `#### :tropical_drink: \`${command}\` on ${stackName}
 
   <details>
@@ -87124,12 +87126,13 @@ function handlePullRequestMessage(config, output) {
             : ''}
     </details>
   `;
-        const { payload, repo } = github.context;
-        invariant(payload.pull_request, 'Missing pull request event data.');
+        const { payload: { pull_request: pullRequest = { number: 0 } }, repo, } = github.context;
+        pullRequest.number || (pullRequest.number = prNumber);
+        invariant(pullRequest.number, 'Missing pull request event data.');
         const octokit = (0,github.getOctokit)(githubToken);
         try {
             if (editCommentOnPr) {
-                const { data: comments } = yield octokit.rest.issues.listComments(Object.assign(Object.assign({}, repo), { issue_number: payload.pull_request.number }));
+                const { data: comments } = yield octokit.rest.issues.listComments(Object.assign(Object.assign({}, repo), { issue_number: pullRequest.number }));
                 const comment = comments.find((comment) => comment.body.startsWith(heading));
                 // If comment exists, update it.
                 if (comment) {
@@ -87141,7 +87144,7 @@ function handlePullRequestMessage(config, output) {
         catch (_a) {
             core.warning('Not able to edit comment, defaulting to creating a new comment.');
         }
-        yield octokit.rest.issues.createComment(Object.assign(Object.assign({}, repo), { issue_number: payload.pull_request.number, body }));
+        yield octokit.rest.issues.createComment(Object.assign(Object.assign({}, repo), { issue_number: pullRequest.number, body }));
     });
 }
 
