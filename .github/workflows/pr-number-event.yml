@@ -8,7 +8,7 @@ jobs:
     name: Running from \#${{ github.event.client_payload.number }}
     runs-on: ubuntu-latest
 
-    if: ${{ github.event.client_payload.event == 'pull_request' }}
+    # if: ${{ github.event.client_payload.event == 'pull_request' }}
 
     steps:
       - uses: actions/checkout@v3
@@ -42,4 +42,6 @@ jobs:
           stack-name: dev
           upsert: true
           work-dir: .github/test-stacks/golang
+          comment-on-pr: true
+          pr-number: ${{ github.event.client_payload.number }}
       - run: echo "The random string is `${{ steps.pulumi.outputs.name }}`"
